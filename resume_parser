@@ -1,0 +1,47 @@
+import fitz  # PyMuPDF
+import spacy
+
+# Load a more advanced spaCy NLP model
+nlp = spacy.load("en_core_web_trf")
+
+def extract_text_from_pdf(pdf_path):
+    """Extract text from a PDF file."""
+    doc = fitz.open(pdf_path)
+    text = "\n".join([page.get_text("text") for page in doc])
+    return text
+
+def extract_job_titles_and_skills(text):
+    """Extract job titles and skills from resume text using NLP."""
+    doc = nlp(text)
+    job_titles = []
+    skills = []
+    
+    # Predefined list of common job titles
+    common_job_titles = {"Software Engineer", "Data Analyst", "Web Developer", "Project Manager", "Data Scientist",
+                         "Machine Learning Engineer", "Front-End Developer", "Back-End Developer", "Full-Stack Developer",
+                         "Business Analyst", "DevOps Engineer", "Cybersecurity Analyst", "Network Engineer", "Database Administrator"}
+    
+    # Extract job titles using Named Entity Recognition (NER)
+    for ent in doc.ents:
+        if ent.label_ in ["PERSON", "ORG", "TITLE"] or ent.text in common_job_titles:
+            if any(keyword in ent.text.lower() for keyword in ["engineer", "developer", "analyst", "manager", "scientist"]):
+                job_titles.append(ent.text)
+    
+    # Extract skills, filtering common job-related keywords
+    for ent in doc.ents:
+        if ent.label_ in ["ORG", "PRODUCT"]:  # Skills may be misclassified
+            skills.append(ent.text)
+    
+    # Filter out irrelevant skills using a predefined skill set
+    valid_skills = {"Python", "JavaScript", "SQL", "Data Analysis", "HTML", "CSS", "Bootstrap", "Git", "Excel"}
+    filtered_skills = [skill for skill in skills if skill in valid_skills]
+    
+    return list(set(job_titles)), filtered_skills
+
+if __name__ == "__main__":
+    pdf_path = r"C:\Users\Admin\Desktop\Resume Parser\Marc_Lester_Resume.pdf"  # Update with actual file path
+    resume_text = extract_text_from_pdf(pdf_path)
+    job_titles, skills = extract_job_titles_and_skills(resume_text)
+    
+    print("Extracted Job Titles:", job_titles)
+    print("Extracted Skills:", skills)
